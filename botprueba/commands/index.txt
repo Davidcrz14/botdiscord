@@ -1,0 +1,59 @@
+const { Client, GatewayIntentBits, Collection, EmbedBuilder } = require('discord.js');
+const { prefix } = require('./config.json');
+const { token } = require('./src/token.json');
+
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers,
+  ]
+});
+
+client.commands = new Collection();
+
+const commandFiles = fs.readdirSync('./src/slashCommands').filter(file => file.endsWith('.js'));
+
+for (const file of commandFiles) {
+  const command = require(`./src/slashCommands/${file}`);
+  client.commands.set(command.name, command);
+}
+
+client.once('ready', () => {
+  console.log(`Iniciado como ${client.user.tag}`);
+});
+
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isCommand()) return;
+
+  const command = client.commands.get(interaction.commandName);
+
+  if (!command) return;
+
+  try {
+    await command.execute(interaction);
+  } catch (error) {
+    console.error(error);
+    await interaction.reply({ content: 'No se puede xd', ephemeral: true });
+  }
+});
+
+client.on('guildMemberAdd', async member => {
+  const channel = member.guild.channels.cache.find(ch => ch.name === 'general');
+
+  if (!channel) return;
+
+  const welcomeEmbed = new EmbedBuilder()
+    .setTitle(`¡Bienvenido a ${member.guild.name}!`)
+    .setDescription(`¡Hola ${member.user}! Bienvenido al servidor ${member.guild.name}.`)
+    .setColor('#00ff00');
+
+  await channel.send({ embeds: [welcomeEmbed] });
+});
+
+client.login(token);
+
+=======
+
+

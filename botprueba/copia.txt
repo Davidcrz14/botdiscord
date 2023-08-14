@@ -1,0 +1,150 @@
+const fs = require('fs');
+const { Client, GatewayIntentBits, Collection } = require('discord.js'); // Import Collection from 'discord.js'
+const { prefix } = require('./config.json');
+const { token } = require('./token.json');
+
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+		GatewayIntentBits.MessageContent,
+		GatewayIntentBits.GuildMembers,
+	
+  ]
+});
+
+client.commands = new Collection(); 
+
+const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+//ptm esta linea da error
+for (const file of commandFiles) {
+  const command = require(`./commands/${file}`); // comandos
+  client.commands.set(command.name, command);
+}
+
+client.once('ready', () => {
+  console.log(`Iniciando en: ${client.user.tag}`); // inicio correcto
+});
+
+client.on('message', message => {
+  if (!message.content.startsWith(prefix) || message.author.bot) return;
+
+  const args = message.content.slice(prefix.length).trim().split(/ +/);
+  const commandName = args.shift().toLowerCase();
+
+  const command = client.commands.get(commandName) || client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
+
+  if (!command) return;
+
+  try {
+    command.execute(message, args);
+  } catch (error) {
+    console.error(error);
+    message.reply('Comando no disponible');
+  }
+});
+
+client.login(token);
+
+
+===================
+
+
+const { REST } = require('@discordjs/rest');
+
+const { Routes } = require('discord-api-types/v9');
+const { token, clientId, guildId } = require('./config.json');
+const commands = [
+  {
+    name: 'anuncio',
+    description: 'Mensaje',
+    options: [
+      {
+        name: 'message',
+        type: 3, // STRING
+        description: 'El mensaje del anuncio',
+        required: true,
+      },
+      {
+        name: 'channel',
+        type: 7, // CHANNEL
+        description: 'El canal donde se enviará el anuncio',
+        required: true,
+      },
+    ],
+  },
+];
+
+
+const rest = new REST({ version: '9' }).setToken(token);
+
+(async () => {
+  try {
+    console.log('Empezando a actualizar los comandos de la aplicación (/)...');
+
+    await rest.put(
+      Routes.applicationGuildCommands(clientId, guildId),
+      { body: commands },
+    );
+
+    console.log('¡Comandos registrados correctamente!');
+  } catch (error) {
+    console.error(error);
+  }
+})();
+===
+
+ `const { Client, Intents, MessageActionRow, MessageButton } = require('discord.js');` ya que en la última versión de `discord.js`, la clase `GatewayIntentBits` ha sido reemplazada por la clase `Intents`¹. Además, asegúrate de que estás usando la versión correcta de Node.js (v16.6.0 o superior) para ejecutar tu código². ¿Te sirve esta información? 😊
+
+Origen: Conversación con Bing, 11/8/2023
+(1) Action rows | discord.js Guide. https://discordjs.guide/message-components/action-rows.html.
+(2) Discord Developer Portal. https://discord.com/developers/docs/interactions/message-components.
+(3) TypeError: MessageActionRow is not a constructor. https://stackoverflow.com/questions/69111164/typeerror-messageactionrow-is-not-a-constructor.
+(4) undefined. https://sourceb.in/8w8wKS1Wmy%29.
+
+
+=================
+
+const fs = require('fs');
+const { Client, GatewayIntentBits, Collection } = require('discord.js'); // libreria
+const { prefix } = require('./config.json');
+const { token } = require('./src/token.json');
+
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers,
+  ]
+});
+
+client.commands = new Collection();
+
+const commandFiles = fs.readdirSync('./src/slashCommands').filter(file => file.endsWith('.js'));
+
+for (const file of commandFiles) {
+  const command = require(`./src/slashCommands/${file}`); // comandos
+  client.commands.set(command.name, command);
+}
+
+client.once('ready', () => {
+  console.log(`Iniciado como ${client.user.tag}`); // inicio correcto
+});
+
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isCommand()) return;
+
+  const command = client.commands.get(interaction.commandName);
+
+  if (!command) return;
+
+  try {
+    await command.execute(interaction);
+  } catch (error) {
+    console.error(error);
+    await interaction.reply({ content: 'No se puede xd', ephemeral: true });
+  }
+});
+
+client.login(token);

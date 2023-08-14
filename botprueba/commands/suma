@@ -1,0 +1,27 @@
+module.exports = {
+  name: 'suma',
+  description: 'Suma varios números separados por +',
+  options: [
+    {
+      name: 'numeros',
+      type: 10, // NUMBER
+      description: 'Números separados por + a sumar',
+      required: true,
+    },
+  ],
+  async execute(interaction) {
+    const input = interaction.options.getNumber('numeros');
+    
+    // Verificar si el número contiene solo el signo '+'
+    if (!/^[+]+$/.test(input)) {
+      await interaction.reply('Formato de entrada incorrecto. Ingresa números separados por +.');
+      return;
+    }
+    
+    const numeros = input.split('+');
+    const suma = numeros.reduce((total, num) => total + num);
+    
+    await interaction.reply(`La suma de los números es ${suma}`);
+  },
+  
+};

@@ -1,0 +1,71 @@
+const fs = require('fs');
+const { Client, GatewayIntentBits, MessageMentions } = require('discord.js');
+const { token } = require('./token.json');
+const { prefix } = require('./config.json');
+const fetch = require('node-fetch');
+
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers,
+  ],
+});
+
+const gpt2Token = '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'; // Reemplaza esto con tu token de GPT-2
+const gpt2Url = 'https://api-inference.huggingface.co/models/gpt2-large';
+
+async function generateGPT2Response(prompt, maxTokens = 50, temperature = 0.1, topK = 50, topP = 0.5) {
+  const response = await fetch(gpt2Url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${gpt2Token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      inputs: prompt,
+      max_tokens: maxTokens,
+      temperature: temperature,
+      top_k: topK,
+      top_p: topP,
+    }),
+  });
+
+  const data = await response.json();
+  return data[0].generated_text;
+}
+
+client.once('ready', () => {
+  console.log(`Iniciado como ${client.user.tag}`);
+  client.user.setActivity('HentaiLA');
+});
+
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isCommand()) return;
+
+  const command = client.commands.get(interaction.commandName);
+
+  if (!command) return;
+
+  try {
+    await command.execute(interaction);
+  } catch (error) {
+    console.error(error);
+    await interaction.reply({ content: 'No se puede xd', ephemeral: true });
+  }
+});
+
+client.on('messageCreate', async message => {
+  if (message.mentions.has(client.user) && !message.author.bot) {
+    const mentionedText = message.content.replace(`<@!${client.user.id}>`, '').trim();
+    const gpt2Response = await generateGPT2Response(mentionedText, 1000, 0.7, 50, 1.0);
+
+    // Generar la respuesta mencionándote a ti
+    const responseWithMention = `${message.author}, ${gpt2Response}`;
+
+    await message.reply(responseWithMention);
+  }
+});
+
+client.login(token);
